@@ -1,0 +1,68 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider     = "prisma-client-js"
+  // Setting a custom output is optional but useful for large projects
+  // output    = "../src/generated/prisma" 
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String        @id @default(uuid())
+  email        String        @unique
+  balance      Float         @default(0)
+  transactions Transaction[]
+  proxies      Proxy[]
+  createdAt    DateTime      @default(now())
+}
+
+model Transaction {
+  id            String            @id @default(uuid())
+  amount        Float
+  currency      String            @default("USD")
+  provider      PaymentProvider
+  status        TransactionStatus @default(PENDING)
+  externalId    String?           @unique // Optional because STK Push starts without an ID
+  taxInvoiceId  String?           // Reference to iTax/eTIMS invoice
+  userId        String
+  user          User              @relation(fields: [userId], references: [id])
+  createdAt     DateTime          @default(now())
+}
+
+model Proxy {
+  id         String    @id @default(uuid())
+  type       ProxyType
+  ipAddress  String
+  port       Int
+  username   String
+  password   String
+  expiresAt  DateTime
+  userId     String
+  user       User      @relation(fields: [userId], references: [id])
+  createdAt  DateTime  @default(now())
+}
+
+// Enums make your code strictly typed and prevent errors
+enum PaymentProvider {
+  STRIPE
+  MPESA
+}
+
+enum TransactionStatus {
+  PENDING
+  COMPLETED
+  FAILED
+}
+
+enum ProxyType {
+  RESIDENTIAL
+  DATACENTER
+}
