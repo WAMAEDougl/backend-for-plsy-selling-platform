@@ -12,16 +12,20 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
 }
 
 model User {
   id           String        @id @default(uuid())
   email        String        @unique
+  password     String
+  role         UserRole      @default(USER)
   balance      Float         @default(0)
   transactions Transaction[]
   proxies      Proxy[]
   createdAt    DateTime      @default(now())
+  
+  @@index([email])
+  @@index([role])
 }
 
 model Transaction {
@@ -35,6 +39,10 @@ model Transaction {
   userId        String
   user          User              @relation(fields: [userId], references: [id])
   createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+  
+  @@index([userId])
+  @@index([status])
 }
 
 model Proxy {
@@ -45,9 +53,14 @@ model Proxy {
   username   String
   password   String
   expiresAt  DateTime
+  isActive   Boolean   @default(true)
   userId     String
   user       User      @relation(fields: [userId], references: [id])
   createdAt  DateTime  @default(now())
+  
+  @@index([userId])
+  @@index([expiresAt])
+  @@index([userId, expiresAt])
 }
 
 // Enums make your code strictly typed and prevent errors
@@ -65,4 +78,9 @@ enum TransactionStatus {
 enum ProxyType {
   RESIDENTIAL
   DATACENTER
+}
+
+enum UserRole {
+  USER
+  ADMIN
 }
